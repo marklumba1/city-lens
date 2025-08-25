@@ -9,7 +9,7 @@ function MapUpdater({ position }: { position: [number, number] }) {
 
   useEffect(() => {
     if (position) {
-      map.flyTo(position, 13); // you can also use map.flyTo(position, 13)
+      map.flyTo(position, 15); // you can also use map.flyTo(position, 13)
     }
   }, [position, map]);
 

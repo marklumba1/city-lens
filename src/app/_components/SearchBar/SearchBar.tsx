@@ -1,6 +1,7 @@
 "use client";
 import useDebounce from "@/app/_lib/hooks/useDebounce";
 import fetchUtil from "@/app/_lib/util/fetch";
+import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 
 export interface NominatimPlace {
@@ -22,18 +23,15 @@ export interface NominatimPlace {
 
 export default function SearchBar({onSelect}: {onSelect: (place: NominatimPlace) => void}) {
   const [searchText, setSearchText] = useState("");
-  const [places, setPlaces] = useState<NominatimPlace[]>([]);
+ 
+  const debouncedSearch = useDebounce(searchText, 300);
 
-  const debouncedSearch = useDebounce(searchText, 500);
-  useEffect(() => {
-    const fetchData = async () => {
-      const data = await fetchUtil<NominatimPlace[]>(
-        `https://nominatim.openstreetmap.org/search?q=${debouncedSearch}&format=json&limit=1000`
-      );
-      setPlaces(data);
-    };
-    debouncedSearch && fetchData();
-  }, [debouncedSearch]);
+
+    const { data: places, isLoading, error } = useQuery<NominatimPlace[]>({
+    queryKey: [debouncedSearch], // cache key
+    queryFn: () => fetchUtil( `https://nominatim.openstreetmap.org/search?q=${debouncedSearch}&format=json&limit=1000`),
+    enabled: !!debouncedSearch
+  });
   return (
     <div>
       <input
@@ -43,7 +41,8 @@ export default function SearchBar({onSelect}: {onSelect: (place: NominatimPlace)
         placeholder="Search"
       />
       <ul>
-        {places.map(place => <p className="hover:bg-slate-100" onClick={() => onSelect(place)}>{place.display_name}</p>)}
+        {places && places.map(place => <p className="hover:bg-slate-100" onClick={() => onSelect(place)}>{place.display_name}</p>)}
+        {isLoading && <p>Loading...</p>}
       </ul>
     </div>
   );
